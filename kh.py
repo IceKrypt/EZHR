@@ -12,6 +12,8 @@ mydb = mysql.connector.connect(user='matt',password='123456',database='job_schem
 cursor = mydb.cursor(prepared=True)
 
 
+
+
 def extract_job_title_from_result(soup):
     jobs = []
     for div in soup.find_all(name="div", attrs={"class": "row"}):
@@ -65,16 +67,25 @@ def extract_summary_from_result(soup):
 
     for div in soup.find_all(name="div", attrs={"class": "row"}):
 
-        for a in div.find_all(name='a', attrs={'class': 'jobtitle turnstileLink'}):
+        for a in div.find_all(name='a', attrs={'data-tn-element':'jobTitle'}):
+
             link = 'http://www.indeed.com' + a['href']
+
             fullsummary = summaryHelper(link)
-            # print(len(summaries))
+
             summaries.append(fullsummary)
     return summaries
 
+def extract_job_link(soup):
+    links = []
+    for div in soup.find_all(name="div", attrs={"class": "row"}):
 
+        for a in div.find_all(name='a', attrs={'data-tn-element':'jobTitle'}):
+            link = 'http://www.indeed.com' + a['href']
+            links.append(link)
+    return links
 def summaryHelper(url):
-    minisummaries = []
+
     subpage = requests.get(url)
     subsoup = BeautifulSoup(subpage.text, 'html.parser')
     JobDespTab = str(subsoup.find(attrs={"class": "jobsearch-JobComponent-description icl-u-xs-mt--md"}))
@@ -82,7 +93,7 @@ def summaryHelper(url):
 
     clean_text = re.sub(cleanr, ' ', JobDespTab)
 
-    # print(len(minisummaries))
+
     return clean_text
 
 
@@ -94,40 +105,45 @@ def scraper_customizat(pages,city,job):
     customlink ='https://www.indeed.com/jobs?q='+job+'&l='+city
 
     for i in range(pages):
-        print(customlink + '&start=' + str(i))
-        page = requests.get(customlink + '&start=' + str(i))
+        page = customlink + '&start=' + str(i);
+
         print(page)
         scraper_start(page)
 
-
-
 def scraper_start(page):
-    soup = BeautifulSoup(page.text, 'html.parser')
+    pagejson = requests.get(page)
+    soup = BeautifulSoup(pagejson.text, 'html.parser')
 
-
-    bugstop = len(extract_summary_from_result(soup))   # called bugstop because if the for loop[ below goes beond this loop program crashes =/
 
     summarylist=(extract_summary_from_result(soup))
     #salaryList  = (extract_salary_from_result(soup))  #  SalaryList is out for now due to not every job having a "salary" on indeed.com
     companylist = (extract_company_from_result(soup))
     titlelist = (extract_job_title_from_result(soup))
     locationlist = (extract_location_from_result(soup))
-    for i in range(bugstop-1):
-        sql = "INSERT INTO job_schema.'jobs' ('job_title','job_company','job_location','job_summary') VALUES (%s,%s,%s,%s) "
-
-        #thisSalary = salaryList[i]
+    urlList = (extract_job_link(soup))
+    for i in range(9):
+        sql = "INSERT INTO jobs (job_title,job_company,job_location,job_summary,job_url) VALUES (%s,%s,%s,%s,%s)"
         thisCompany = companylist[i]
         thisTitle = titlelist[i]
         thisLocation = locationlist[i]
         thisSummary = summarylist[i]
+        thisUrl = urlList[i]
 
-
-        insert_tuple = (thisTitle,thisCompany,thisLocation,thisSummary)
-        #cursor.execute(sql,insert_tuple)
+        insert_tuple = (thisTitle,thisCompany,thisLocation,thisSummary,thisUrl)
+        cursor.execute(sql,insert_tuple)
         print(insert_tuple)
-        #mydb.commit()
+        mydb.commit()
 
 
+def db_test():
 
+    cities = ['chicago','new york city', 'seattle','washington','Detroit','Austin','San Francisco','Dallas','orlando','Denver']
 
-scraper_customizat(10,'chicago','java')
+    search_jobs= ['software developer', 'artificial intelligence','web developer','Database administrator','mySQL','java', "angular","react",  'python',
+                  'financial analyst','internship','cybersecurity']
+
+    for i in range(len(search_jobs)):
+        for j in range(len(cities)):
+            scraper_customizat(10,cities[j],search_jobs[i])
+db_test()
+
