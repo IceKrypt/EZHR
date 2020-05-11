@@ -9,4 +9,5 @@ CREATE TABLE `jobs` (
   `job_location` varchar(255) NOT NULL,
   `job_summary` text NOT NULL,
   `job_url` text NOT NULL
-) ;
+
+);
