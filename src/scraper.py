@@ -17,7 +17,7 @@ mydb = mysql.connector.connect(host=host_var, user=username_var, password=passwo
 cursor = mydb.cursor(prepared=True)
 
 
-# TODO: Rewrite this scraper code to work better with Indeeds updated layout. Could also be abstracted a bit to work for other websites
+# TODO: Rewrite this scraper code to work better with Indeeds updated layout. Could also be abstracted/modularized a bit to work for other websites
 
 def extract_job_title_from_result(soup):
     jobs = []
