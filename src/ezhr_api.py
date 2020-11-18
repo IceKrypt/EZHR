@@ -53,9 +53,7 @@ def Register():
         cursor.execute(sql, insert_tuple)
         mydb.commit()
         return b'successful', 200
-
-    else:
-        return b'email in use', 400
+    return b'email in use', 400
 
 
 class Job_title(Resource):
